@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- ========================================================================
+       assimp.props  --  assimp 第三方库的统一配置（一份顶 N 份）
+       ------------------------------------------------------------------------
+       为什么用属性表：
+         .vcxproj 里 Debug|x64 和 Release|x64 是**两套独立的属性块**，手改一遍
+         只对当前配置生效。属性表可以被任意多个「项目 x 配置」同时引用，
+         改一处＝全部同步，也不会在 6 个 vcxproj 里各存一份容易走样的副本。
+
+       怎么用（VS 里）：
+         视图 → 其他窗口 → 属性管理器
+         展开某个项目 → 展开某个配置（如 Debug|x64）
+         右键 → 添加现有属性表 → 选本文件
+         对 Release|x64、以及 week5/whitted 的配置重复这一步（共 5 次）
+
+       路径说明：
+         下面的相对路径都是相对 .vcxproj 所在目录（weekN\weekN\）解析的，
+         所以 ..\..\ 正好是仓库根 Whitted\。
+       ======================================================================== -->
+
+  <PropertyGroup>
+    <IncludePath>..\..\_third_party\assimp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\_third_party\assimp\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <!-- CUDA 项目特有：nvcc 前端自己也要能找头文件，只用 VC++ 目录有时不生效 -->
+    <CudaCompile>
+      <Include>..\..\_third_party\assimp\include;%(Include)</Include>
+    </CudaCompile>
+    <Link>
+      <AdditionalDependencies>assimp-vc142-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>
