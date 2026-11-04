@@ -1,4 +1,4 @@
-﻿# whitted `--bench` 原始数据（未取中位数）
+# whitted `--bench` 原始数据（未取中位数）
 
 > 这份文件保存**每一次**运行的原始读数，供事后核查与统计。
 > `perf_report.md` 里填的是这里的中位数。
@@ -19,7 +19,7 @@
 | GPU | RTX 4070 Ti（60 SM，12 GB，sm_89） |
 | 驱动 | CUDA 8.9 |
 | 运行环境 | **ToDesk 远程桌面**（NVENC 硬编在线） |
-| 运行目录 | `whitted\whitted\`（保证 `..\..\objs\` 解析到 bunny） |
+| 运行目录 | `whitted\src\`（保证 `..\objs\` 解析到 bunny） |
 | 重复次数 | 6 次，每档单次测量，未做预热之外的额外处理 |
 
 ---
@@ -105,11 +105,11 @@
 ## 复现方式
 
 ```bat
-cd /d F:\vs2026code\Whitted\whitted\whitted
+cd /d <仓库根>\src
 ..\x64\Release\whitted.exe --bench --width 2560 --height 1440
 ```
 
 **注意**：
-1. 必须在 `whitted\whitted\` 目录（否则 OBJ 加载不到，三角形数会变成兜底网格的 20000）
+1. 必须在 `whitted\src\` 目录（否则 OBJ 加载不到，三角形数会变成兜底网格的 20000）
 2. 必须用 **Release**（Debug 下档 0 要跑 14 分钟，且优化效果全被破坏）
 3. 启动日志里看到 `三角形=10000` 和 `[assimp] 5.0.0` 才是正确的

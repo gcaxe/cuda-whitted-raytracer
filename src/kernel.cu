@@ -27,10 +27,10 @@
 //    --interactive      Win32 窗口实时预览（方向键/WASD 转相机，Q/E 缩放，R 重渲染）
 //
 //  编译提示：源码是 **UTF-8 带 BOM（EF BB BF）**，BOM 是 cl 与 nvcc 前端都能识别的
-//  in-file 信号，所以**不需要 `/utf-8` 编译选项**（本机的 C/C++ 与 CUDA Host 两个
-//  Additional Compiler Options 都是空的）。如果 BOM 被剥掉，中文 locale 的 nvcc 会按
-//  GBK(936) 读它，报 C4819 甚至一个假的 C1070，或在字符串处报 missing closing quote。
-//  修复：`powershell -ExecutionPolicy Bypass -File .\_tools\add_bom.ps1`
+//  in-file 信号，所以**不需要 `/utf-8` 编译选项**。如果 BOM 被剥掉，中文 locale 的
+//  nvcc 会按 GBK(936) 读它，报 C4819 甚至一个假的 C1070，或在字符串处报
+//  missing closing quote。
+//  修复：用 VS / Notepad++ 把文件另存为「UTF-8 with BOM」。
 // ============================================================================
 
 #include "cuda_runtime.h"
@@ -174,7 +174,7 @@ static const char* debugViewName(DebugView v)
 //  控制台编码：让中文输出在「UTF-8 执行字符集」和「936(GBK) 执行字符集」下都不乱码
 // ---------------------------------------------------------------------------
 //  这套源码是 UTF-8 带 BOM；MSVC 用哪种「执行字符集」由编译选项决定，
-//  而本机**没有加 `/utf-8`**，所以窄字符串默认被转成 GBK(936) 字节 -> 控制台保持 936 才对。
+//  而这里的工程**没有加 `/utf-8`**，所以窄字符串默认被转成 GBK(936) 字节 -> 控制台保持 936 才对。
 //  （如果有人加了 /utf-8，字符串会变成 UTF-8 字节，那时要切到 65001 才显示对。）
 //  探针：U+5EFA（"建"）在 UTF-8 里是 E5 BB BA，在 GBK 里是 BD A8；
 //  首字节是 0xE5 就说明编译器按 UTF-8 执行字符集处理了，否则保持原样。

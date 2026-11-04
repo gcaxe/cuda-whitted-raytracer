@@ -28,17 +28,30 @@ OBJ 三角网格（assimp 加载）、BVH 加速，以及一套**逐档量化**�
 ### 1.2 命令行编译
 
 ```bat
-call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
-cd /d <仓库根>\whitted
-nvcc -std=c++17 -O2 -arch=native kernel.cu -o whitted.exe
+call "<VS 安装目录>\VC\Auxiliary\Build\vcvars64.bat"   :: 路径按你的 VS 版本调整
+cd /d <仓库根>\src
+
+:: 3 个编译单元：kernel.cu（CUDA）+ obj_assimp.cpp / empty.cpp（普通 C++）
+nvcc -std=c++17 -O2 -arch=native kernel.cu obj_assimp.cpp empty.cpp ^
+     -I..\_third_party\assimp\include ^
+     -L..\_third_party\assimp\lib -lassimp-vc142-mtd ^
+     -o whitted.exe
+
 whitted.exe --frames 1
 ```
 
-- `-arch=native` 会针对本机 GPU 生成代码（本机是 RTX 4070 Ti / `sm_89`）；
-  想固定架构就写 `-arch=sm_89`。
-- `-std=c++17` 是保险起见；代码实际只用到 C++11/14 的特性（`std::nth_element`、`alignas`、
-  模板），但如果工具链默认标准更老，显式指定更稳。
-- **注意命令行里没有 `-Xcompiler /utf-8`**：编码靠文件里的 BOM，不靠开关。
+> ⚠️ **推荐直接用 Visual Studio 打开 `whitted.slnx`** —— 项目的包含路径、库目录、
+> 附加依赖项都已经配好，不需要手写上面这些参数。命令行方式列在这里是为了说明
+> 「这个项目由哪些编译单元组成」。
+
+- `kernel.cu` 由 **nvcc** 编译；`obj_assimp.cpp` / `empty.cpp` 是普通 C++ 单元，
+  nvcc 会自动转交给 `cl.exe`（这就是为什么 assimp 的头文件不会进入 CUDA 的 device 编译阶段）。
+- `-lassimp-vc142-mtd` 对应 `_third_party\assimp\lib\assimp-vc142-mtd.lib`。
+- **运行时**还需要把 `assimp-vc142-mtd.dll` 放到 exe 同目录（见 1.4；没有它也能跑，
+  只是会回退到手写 OBJ 解析器）。
+- `-arch=native` 针对**本机 GPU** 生成代码（测试机是 RTX 4070 Ti = `sm_89`）；想固定架构就写 `-arch=sm_89`。
+- `-std=c++17` 是保险起见；代码实际只用到 C++11/14 的特性。
+- **命令行里没有 `-Xcompiler /utf-8`**：编码靠文件里的 BOM，不靠开关（见 1.3）。
 
 ### 1.3 编码：源文件是 UTF-8 带 BOM，不需要 `/utf-8`
 
@@ -53,7 +66,7 @@ whitted.exe --frames 1
 BOM 是 cl 与 nvcc 前端都能识别的 in-file 信号，两个编译器都会据此按 UTF-8 解码，
 所以**一个编码相关的编译选项都不用加**。
 
-本机实际配置（真实核对，不是建议值）：
+测试机实际配置（真实核对，不是建议值）：
 
 | 位置 | 实际值 |
 | --- | --- |
@@ -64,11 +77,13 @@ BOM 是 cl 与 nvcc 前端都能识别的 in-file 信号，两个编译器都会
 **为什么不用 `/utf-8`**：`-Xcompiler /utf-8` 只转发给主机编译器 cl，
 而 `.cu` 的预处理与字符串解析发生在 nvcc 自己的前端，那里读不到这个开关。
 
-**维护提醒**：AI 编辑工具每次改文件会剥掉 BOM，改完要重跑
-`powershell -ExecutionPolicy Bypass -File .\_tools\add_bom.ps1`（幂等，会先备份）。
+**维护提醒**：部分编辑器（尤其跨平台工具、某些脚本）保存 UTF-8 文件时**不会写入 BOM**。
+改完源文件后请确认 BOM 仍在 —— VS 里可以用「文件 → 高级保存选项」查看/修改编码，
+Notepad++ 里看「编码」菜单是否有 `UTF-8-BOM` 标记。
 
 程序内部还做了一层保险：启动时探测自己的中文字符串是 UTF-8 还是 GBK 字节，
 只有在确实是 UTF-8 时才 `SetConsoleOutputCP(CP_UTF8)`，避免控制台乱码。
+
 ### 1.4 第三方依赖：assimp
 
 本仓库提交了 assimp 的**头文件与导入库**（`_third_party/assimp/`），所以**编译能过**；
@@ -190,11 +205,10 @@ whitted\                         仓库根
 | **有序遍历 + 剪枝** | 档 1 ÷ 档 2 | 近子节点优先，先命中近处 → `best` 立刻变小 → 远处子树整棵被剪掉 |
 | **三角形 SoA** | 档 2 ÷ 档 3 | 可能 <1（见下） |
 | **共享内存根缓存** | 档 3 ÷ 档 4 | 根附近 16 个节点进 `__shared__` |
-| **BVH 整体** | 档 0 ÷ 档 4 | 简历上那个总加速比 |
+| **BVH 整体** | 档 0 ÷ 档 4 | 对外展示的总加速比 |
 
-**程序不会自己写 `out\perf_report.md`** —— 它只把数据打印到控制台，并额外存下
-`bench0_brute` 与 `bench4_best` 两张图便于肉眼对比；`out\perf_report.md` 是**手写模板**，
-跑完 `--bench` 之后照着控制台把数字填进去。
+`--bench` 只把数据打印到控制台，并额外存下 `bench0_brute` 与 `bench4_best` 两张图便于肉眼对比。
+完整的实测报告见 **`src/out/perf_report.md`**（已填入下面这张表的数字），原始读数见 `src/out/raw_bench_data.md`。
 
 三项优化的原理：
 
@@ -284,7 +298,7 @@ whitted\                         仓库根
 
 | 现象 | 原因 / 处理 |
 | --- | --- |
-| 报 `C1070: #if/#endif 不匹配` 或 `missing closing quote` | 编码问题：**BOM 被剥掉了**。跑 `_tools\add_bom.ps1` 补回（见 1.3），**不是代码有语法错误** |
+| 报 `C1070: #if/#endif 不匹配` 或 `missing closing quote` | 编码问题：**BOM 被剥掉了**。用 VS / Notepad++ 另存为「UTF-8 with BOM」（见 1.3），**不是代码有语法错误** |
 | 控制台中文乱码 | 同上；或确认 `setupConsoleEncoding()` 的探针是否生效 |
 | 只写出 `.ppm` 没有 `.png` | 找不到 `stb_image_write.h`：**本仓库已经自带** `_third_party\stb\stb_image_write.h`（`png_writer.h` 会按 `../_third_party/stb/` 查找）。若仍报这个错，检查该文件是否被误删 |
 | 运行即崩 / 全黑 | 先看 `--mode brute` 是否正常（能出图说明是 BVH 侧的问题）；BVH 模式下看控制台打印的「栈峰值 / 溢出次数」：溢出只会**计数并告警**，程序**不会**自动退回线性扫描（那样会破坏各档之间的一致性），所以溢出非 0 时画面可能出现空洞，需要调 `--split` 或叶子阈值 |
