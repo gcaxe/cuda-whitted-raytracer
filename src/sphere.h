@@ -19,12 +19,12 @@
 //    * taking the far root when the camera is inside the sphere, which makes
 //      the near surface disappear.
 //
-//  Week 6 change: the scene is passed *by value* in a fixed-size array instead
-//  of as a `const Sphere*` pointing at a host array.  A host pointer inside a
-//  kernel argument is not dereferenceable on the device, and week 6 really
-//  does ship spheres + a mesh + a BVH to the GPU in one launch.  A small
-//  by-value array lands in constant memory, which is the fastest place for
-//  data every thread reads.
+//  The scene is passed *by value* in a fixed-size array instead of as a
+//  `const Sphere*` pointing at a host array.  A host pointer inside a kernel
+//  argument is not dereferenceable on the device, and this renderer does ship
+//  spheres + a mesh + a BVH to the GPU in one launch.  A small by-value array
+//  lands in constant memory, which is the fastest place for data every thread
+//  reads.
 // ============================================================================
 #pragma once
 
@@ -34,9 +34,9 @@
 // ---------------------------------------------------------------------------
 //  Hit record: what the shading code needs to know about an intersection
 // ---------------------------------------------------------------------------
-// `materialId` indexes into the scene's material array.  (Week 1 called this
-// field `objectId`; now that spheres and mesh triangles live in one scene,
-// "which material shades me" is the only thing the shading code needs.)
+// `materialId` indexes into the scene's material array.  (An earlier version
+// called this field `objectId`; now that spheres and mesh triangles live in one
+// scene, "which material shades me" is the only thing the shading code needs.)
 struct HitRecord
 {
     float t;           // distance along the ray

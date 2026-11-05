@@ -1,10 +1,10 @@
 ﻿// ============================================================================
 //  rt_math.h  --  ray, camera and the handful of constants the tracer needs
 // ----------------------------------------------------------------------------
-//  Week 1 introduces this file: the camera turns a pixel index into a primary
-//  ray.  Everything above `distance()` / `randomInUnit*` is used from week 1
-//  onwards; the random helpers are only needed from week 6 (multi-sample
-//  anti-aliasing), so they can be ignored until then.
+//  The camera turns a pixel index into a primary ray.  Everything above
+//  `distance()` / `randomInUnit*` is used throughout; the random helpers are
+//  only needed for multi-sample anti-aliasing, so they can be ignored if you
+//  are not doing stochastic sampling.
 // ============================================================================
 #pragma once
 
@@ -26,7 +26,7 @@ RT_HD RT_INLINE int cdiv(int n, int b)
 #define RT_INFINITY  (1e30f)     // "far enough" for us; avoids INF arithmetic
 #define RT_EPS       1.0e-4f     // general ray/plane epsilon
 #define RT_SHADOW_EPS 1.0e-3f    // push the shadow/reflection ray off the surface
-                                 // (week 2: too small -> shadow acne, too big -> light leak)
+                                 // (too small -> shadow acne, too big -> light leak)
 
 // ---------------------------------------------------------------------------
 //  ray
@@ -101,7 +101,7 @@ RT_HD RT_INLINE void pixelToUV(int x, int y, int width, int height, float* u, fl
 }
 
 // ---------------------------------------------------------------------------
-//  world point -> pixel  (added in week 4)
+//  world point -> pixel
 // ---------------------------------------------------------------------------
 // The shadow self-test needs to know which pixel a known world-space point
 // lands on, so it can read that pixel back and check it is dark.
@@ -148,7 +148,7 @@ inline bool worldToPixel(const Camera& cam, const Vec3& p, int width, int height
 }
 
 // ---------------------------------------------------------------------------
-//  reflection / refraction  (week 3)
+//  reflection / refraction
 // ---------------------------------------------------------------------------
 // n must be the *unit outward* normal at the hit point.
 RT_HD RT_INLINE Vec3 reflect(const Vec3& d, const Vec3& n)
@@ -167,7 +167,7 @@ RT_HD RT_INLINE bool refract(const Vec3& d, const Vec3& n, float etaRatio, Vec3*
     return true;
 }
 
-// Schlick's approximation of the Fresnel reflectance (week 3).
+// Schlick's approximation of the Fresnel reflectance.
 RT_HD RT_INLINE float schlickReflectance(float cosTheta, float ior)
 {
     float r0 = (1.0f - ior) / (1.0f + ior);
@@ -177,7 +177,7 @@ RT_HD RT_INLINE float schlickReflectance(float cosTheta, float ior)
 }
 
 // ---------------------------------------------------------------------------
-//  tiny PRNG for stochastic anti-aliasing / soft shadows (week 6, optional)
+//  tiny PRNG for stochastic anti-aliasing / soft shadows (optional)
 // ---------------------------------------------------------------------------
 // Hash based, so the result only depends on the pixel -- a re-render at the
 // same settings is bit-for-bit reproducible, which matters when comparing

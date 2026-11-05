@@ -156,7 +156,7 @@ inline int writeImageBoth(const char* outDir, const char* stem,
 }
 
 // ---------------------------------------------------------------------------
-//  image comparison -- the acceptance test for week 5 / week 6
+//  image comparison -- the acceptance test for the BVH tiers
 // ---------------------------------------------------------------------------
 // Compares two RGBA buffers of the same size and reports the worst channel
 // difference and the mean absolute difference.  "maxDiff == 0" is exactly the
